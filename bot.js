@@ -6,13 +6,21 @@ const TradeOfferManager = require('steam-tradeoffer-manager');
 const secrets = require('./2fasecrets.json');
 let messageLog = {};
 let users = {};
+const botStats = {
+    keys_sold: 1,
+    keys_bought: 2,
+    sold: 1.80,
+    spent: 3.40
+}
+const owner_accout_id = '76561199356766788'
 
 const client = new SteamUser();
 const community = new SteamCommunity();
 const manager = new TradeOfferManager({
 	steam: client,
 	community: community,
-	language: 'en'
+	language: 'en',
+    pollInterval: 10000
 });
 
 const logOnOptions = {
@@ -20,6 +28,8 @@ const logOnOptions = {
   password: secrets.password,
   twoFactorCode: SteamTotp.generateAuthCode(secrets.shared_secret)
 };
+
+
 
 client.logOn(logOnOptions);
 
@@ -31,17 +41,31 @@ client.on('loggedOn', () => {
 });
 
 client.on('webSession', (sessionid, cookies) => {
+    manager.apiKey = secrets.api_key;
+
     manager.setCookies(cookies);
   
     community.setCookies(cookies);
     community.startConfirmationChecker(10000, secrets.identity_secret);
 });
 
+client.on('accountLimitations', function (limited, communityBanned, locked) {
+    if (limited) {
+        console.warn("Our account is limited. We cannot send friend invites, use the market, open group chat, or access the web API.");
+    }
+    if (communityBanned){
+        console.warn("Our account is banned from Steam Community");
+    }
+    if (locked){
+        console.error("Our account is locked. We cannot trade/gift/purchase items, play on VAC servers, or access Steam Community.  Shutting down.");
+        process.exit(1);
+    }
+});
 
 client.on('friendRelationship', (steamid, relationship) => {
     if (relationship === 2) {
       client.addFriend(steamid);
-      client.chatMessage(steamid, 'Hello there! Thanks for adding me!');
+      client.chatMessage(steamid, 'Hello! I am a bot that buys and sells TF2 keys for crypto! Use !commands to see what I can do!');
     }
   });
 
@@ -60,19 +84,22 @@ client.on('friendMessage', (steamid, message) => {
             messages: [message],
             last_message: Date.now(),
             keys_sold: 0,
-            keys_bought: 0
+            keys_bought: 0,
+            sold: 0.0,
+            spent: 0.0
         };
     }
     console.log(`Message from ${steamid}: ${message}`);
 
     if (message === '!commands') {
-        client.chatMessage(steamid, 'Hello! I am a bot that buys and sells TF2 keys for crypto!');
+        
         client.chatMessage(steamid, '/code <--------------------------- General Commands --------------------------->\n\n \
             !owner - Get the owner of the bot\n \
             !rate - Get the current rate of the bot\n \
             !stats - Get all bot related stats\n \
             !coins - Get a list of all the coins the bot uses\n \
-            !fees - Get the current transactions fees for ech coin');
+            !fees - Get the current transactions fees for ech coin\n \
+            !stock - Get the current stock of the bot');
 
         client.chatMessage(steamid, '/code <--------------------------- Buying Commands --------------------------->\n\n \
         !buy <amount> <coin> - Buy the amount of keys using the coin');
@@ -80,10 +107,42 @@ client.on('friendMessage', (steamid, message) => {
         client.chatMessage(steamid, '/code <--------------------------- Selling Commands --------------------------->\n\n \
         !sell <amount> <coin> - Sell the amount of keys for the coin');
     }
+
+    else if (message === '!owner') {
+        client.chatMessage(steamid, `My owner is: https://steamcommunity.com/profiles/${owner_accout_id}`);
+    }
+
+    else if (message === '!rate') {
+        client.chatMessage(steamid, 'I\'m currently buying keys for $1.70 and selling for $1.80 each');
+    }
+
+    else if (message === '!stats') {
+        client.chatMessage(steamid, `/code <--------------------------- Bot Stats --------------------------->\n\n \
+                        Total Keys Sold: ${botStats.keys_sold}\n \
+                        Total Keys Bought: ${botStats.keys_bought}\n \
+                        Total Sold: $${botStats.sold}\n \
+                        Total Bought: $${botStats.spent}`)
+
+        client.chatMessage(steamid, `/code <------------------------- Personal Stats ------------------------->\n\n \
+                        Total Keys Sold: ${users[steamid].keys_sold}\n \
+                        Total Keys Bought: ${users[steamid].keys_bought}\n \
+                        Total Sold: $${users[steamid].sold}\n \
+                        Total Bought: $${users[steamid].spent}`)
+    }
+
+    else if (message === '!stock') {
+        manager.getInventoryContents(440, 2, true, (err, inventory) => {
+            if (err) {
+                console.log(err);
+            } else {
+                client.chatMessage(steamid, `I currently have ${inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key').length} keys in stock`);
+            }
+        });
+    }
 });
 
-
-manager.on('newOffer', offer => {
+manager.on('newOffer', function(offer) {
+    console.log("New offer #" + offer.id + " from " + offer.partner.getSteamID64());
     if (offer.itemsToGive.length === 0) {
         offer.accept((err, status) => {
           if (err) {
@@ -93,7 +152,7 @@ manager.on('newOffer', offer => {
           }
         });
 
-    } else if (offer.partner.getSteamID64() === 'your_trusted_account_id') {
+    } else if (offer.partner.getSteamID64() === owner_accout_id) {
         offer.accept((err, status) => {
             if (err) {
                 console.log(err);
