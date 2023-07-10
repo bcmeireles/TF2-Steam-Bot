@@ -12,7 +12,7 @@ const botStats = {
     sold: 1.80,
     spent: 3.40
 }
-const owner_accout_id = '76561199356766788'
+const owner_account_id = '76561199356766788'
 
 const client = new SteamUser();
 const community = new SteamCommunity();
@@ -26,7 +26,8 @@ const manager = new TradeOfferManager({
 const logOnOptions = {
   accountName: secrets.username,
   password: secrets.password,
-  twoFactorCode: SteamTotp.generateAuthCode(secrets.shared_secret)
+  twoFactorCode: SteamTotp.generateAuthCode(secrets.shared_secret),
+  logonID: 2
 };
 
 
@@ -111,7 +112,7 @@ client.on('friendMessage', (steamid, message) => {
     }
 
     else if (message === '!owner') {
-        client.chatMessage(steamid, `My owner is: https://steamcommunity.com/profiles/${owner_accout_id}`);
+        client.chatMessage(steamid, `My owner is: https://steamcommunity.com/profiles/${owner_account_id}`);
     }
 
     else if (message === '!rate') {
@@ -141,6 +142,20 @@ client.on('friendMessage', (steamid, message) => {
             }
         });
     }
+
+    else if (message.split(" ")[0] === '!send' && steamid.toString() === owner_account_id) {
+        axios.post('http://localhost:3000/sendtf2keys', 
+        {
+            partner_steam_id: message.split(" ")[1],
+            keyQuantity: message.split(" ")[2]
+        })
+        .then((response) => {
+            console.log(response.data);
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+    }
 });
 
 manager.on('newOffer', function(offer) {
@@ -154,7 +169,7 @@ manager.on('newOffer', function(offer) {
           }
         });
 
-    } else if (offer.partner.getSteamID64() === owner_accout_id) {
+    } else if (offer.partner.getSteamID64() === owner_account_id) {
         offer.accept((err, status) => {
             if (err) {
                 console.log(err);

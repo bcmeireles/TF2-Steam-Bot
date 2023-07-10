@@ -20,10 +20,9 @@ const manager = new TradeOfferManager({
 const logOnOptions = {
   accountName: secrets.username,
   password: secrets.password,
-  twoFactorCode: SteamTotp.generateAuthCode(secrets.shared_secret)
+  twoFactorCode: SteamTotp.generateAuthCode(secrets.shared_secret),
+  logonID: 1
 };
-
-
 
 client.logOn(logOnOptions);
 
