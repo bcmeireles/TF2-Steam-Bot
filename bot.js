@@ -38,6 +38,8 @@ client.on('loggedOn', () => {
 
   client.setPersona(SteamUser.EPersonaState.Online);
   client.gamesPlayed("Testing");
+
+  
 });
 
 client.on('webSession', (sessionid, cookies) => {
@@ -173,29 +175,5 @@ manager.on('newOffer', function(offer) {
   });
 
 
-function sendTF2Key(partner_steam_id) {
-    manager.loadInventory(440, 2, true, (err, inventory) => {
-        if (err) {
-            console.log(err);
-        } else {
-            const offer = manager.createOffer(partner_steam_id);
-            const keys = inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key');
-f
-            if (keys.length >= keyQuantity) {
-                for (let i = 0; i < keyQuantity; i++) {
-                    offer.addMyItem(keys[i]);
-                }
-                offer.setMessage(`Here are the ${keyQuantity} keys you purchased.`);
-                offer.send((err, status) => {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log(`Offer for ${keyQuantity} sent to ${partner_steam_id}. Status: ${status}.`);
-                    }
-                });
-            } else {
-                console.log('Not enough keys in the inventory.');
-            }
-        }
-    });
-}
+
+
