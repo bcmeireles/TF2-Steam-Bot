@@ -3,6 +3,8 @@ const SteamTotp = require('steam-totp');
 const SteamCommunity = require('steamcommunity');
 const TradeOfferManager = require('steam-tradeoffer-manager');
 
+const axios = require('axios');
+
 const secrets = require('./2fasecrets.json');
 let messageLog = {};
 let users = {};
@@ -143,7 +145,7 @@ client.on('friendMessage', (steamid, message) => {
         });
     }
 
-    else if (message.split(" ")[0] === '!send' && steamid.toString() === owner_account_id) {
+    else if (message.startsWith('!send') && steamid.toString() === owner_account_id) {
         axios.post('http://localhost:3000/sendtf2keys', 
         {
             partner_steam_id: message.split(" ")[1],
@@ -151,6 +153,21 @@ client.on('friendMessage', (steamid, message) => {
         })
         .then((response) => {
             console.log(response.data);
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+    }
+
+    else if (message.startsWith('!buy')) {
+        axios.post('http://localhost:3000/createcharge', 
+        {
+            steamid: steamid.toString(),
+            keyQuantity: message.split(" ")[1]
+        })
+        .then((response) => {
+            console.log(response.data);
+            client.chatMessage(steamid, `Please pay here: ${response.data.hosted_url}`);
         })
         .catch((error) => {
             console.log(error);
