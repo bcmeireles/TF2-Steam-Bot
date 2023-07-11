@@ -118,7 +118,7 @@ client.on('friendMessage', (steamid, message) => {
     }
 
     else if (message === '!rate') {
-        client.chatMessage(steamid, 'I\'m currently buying keys for $1.70 and selling for $1.80 each');
+        client.chatMessage(steamid, `I\'m currently buying keys for ${secrets.tf2_key_buy_rate} and selling for ${secrets.tf2_key_sell_rate} each`);
     }
 
     else if (message === '!stats') {

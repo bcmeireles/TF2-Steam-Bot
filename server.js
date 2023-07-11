@@ -156,6 +156,8 @@ app.post('/webhooks', async (req, res) => {
         );
 
         if (event.type === 'charge:confirmed') {
+            console.log('sending 200 status');
+            res.sendStatus(200);
             console.log('confirmed')
             let amount = event.data.pricing.local.amount;
             let currency = event.data.pricing.local.currency;
@@ -163,11 +165,21 @@ app.post('/webhooks', async (req, res) => {
             let keyQuantity = event.data.metadata.keyQuantity;
 
             console.log(`Charge for ${amount} ${currency} confirmed. Sending ${keyQuantity} keys to ${steam_id}.`);
+
+            sendTF2Keys(steam_id, keyQuantity)
+                .then((result) => {
+                    console.log('sucessooo');
+                    console.log(result);
+                    
+                })
+                .catch((err) => res.status(500).send(err));
+
         } else {
             console.log(event);
+            res.sendStatus(200);
         }
 
-        res.sendStatus(200);
+        
     } catch(error) {
         console.error(`Error processing webhook: ${error.message}`);
         res.status(500).json({
