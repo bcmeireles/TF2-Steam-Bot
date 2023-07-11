@@ -46,7 +46,7 @@ client.on('loggedOn', () => {
 });
 
 client.on('webSession', (sessionid, cookies) => {
-    manager.apiKey = secrets.api_key;
+    manager.apiKey = secrets.steam_api_key;
 
     manager.setCookies(cookies);
   
@@ -160,6 +160,11 @@ client.on('friendMessage', (steamid, message) => {
     }
 
     else if (message.startsWith('!buy')) {
+        axios.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${secrets.steam_api_key}&steamids=${steamid.toString()}`)
+        .then((response) => {
+            let avatar = response.data.response.players[0].avatarfull;
+        
+
         axios.post('http://localhost:3000/createcharge', 
         {
             steamid: steamid.toString(),
@@ -168,10 +173,42 @@ client.on('friendMessage', (steamid, message) => {
         .then((response) => {
             console.log(response.data);
             client.chatMessage(steamid, `Please pay here: ${response.data.hosted_url}`);
+            axios.post(secrets.discord_webhook, {
+                "content": null,
+                "embeds": [
+                  {
+                    "title": `New Charge: ${response.data.hosted_url.split("/").pop()}`,
+                    "url": response.data.hosted_url,
+                    "color": null,
+                    "fields": [
+                      {
+                        "name": "Amount",
+                        "value": message.split(" ")[1],
+                        "inline": true
+                      },
+                      {
+                        "name": "Price",
+                        "value": (parseInt(message.split(" ")[1]) * secrets.tf2_key_sell_rate).toString(),
+                        "inline": true
+                      }
+                    ],
+                    "author": {
+                      "name": steamid.toString(),
+                      "url": `https://steamcommunity.com/profiles/${steamid.toString()}`,
+                      "icon_url": avatar
+                    }
+                  }
+                ],
+                "attachments": []
+              })
         })
         .catch((error) => {
             console.log(error);
         });
+    })
+    .catch((error) => {
+        console.log(error);
+    });
     }
 });
 

@@ -51,7 +51,7 @@ client.on('loggedOn', () => {
 });
 
 client.on('webSession', (sessionid, cookies) => {
-    manager.apiKey = secrets.api_key;
+    manager.apiKey = secrets.steam_api_key;
 
     manager.setCookies(cookies);
   
