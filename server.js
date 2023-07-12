@@ -5,6 +5,8 @@ const SteamTotp = require('steam-totp');
 const SteamCommunity = require('steamcommunity');
 const TradeOfferManager = require('steam-tradeoffer-manager');
 
+const axios = require('axios');
+
 var coinbase = require('coinbase-commerce-node');
 var Client = coinbase.Client;
 var Charge = coinbase.resources.Charge;
@@ -47,7 +49,6 @@ client.on('loggedOn', () => {
   client.setPersona(SteamUser.EPersonaState.Online);
   client.gamesPlayed("Testing");
 
-  
 });
 
 client.on('webSession', (sessionid, cookies) => {
@@ -170,6 +171,39 @@ app.post('/webhooks', async (req, res) => {
                 .then((result) => {
                     console.log('sucessooo');
                     console.log(result);
+                    axios.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${secrets.steam_api_key}&steamids=${steamid.toString()}`)
+                    .then((response) => {
+                        let avatar = response.data.response.players[0].avatarfull;
+
+                        axios.post(secrets.discord_webhook, {
+                            "content": null,
+                            "embeds": [
+                              {
+                                "title": `Keys delivered to ${steamid.toString()}`,
+                                "color": 65280,
+                                "fields": [
+                                  {
+                                    "name": "Amount",
+                                    "value": keyQuantity,
+                                    "inline": true
+                                  },
+                                  {
+                                    "name": "Price",
+                                    "value": (parseInt(message.split(" ")[1]) * secrets.tf2_key_sell_rate).toString(),
+                                    "inline": true
+                                  }
+                                ],
+                                "author": {
+                                  "name": steamid.toString(),
+                                  "url": `https://steamcommunity.com/profiles/${steamid.toString()}`,
+                                  "icon_url": avatar
+                                }
+                              }
+                            ],
+                            "attachments": []
+                          })
+                    })
+                    .catch((err) => console.log(err));
                     
                 })
                 .catch((err) => res.status(500).send(err));

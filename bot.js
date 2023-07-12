@@ -179,7 +179,7 @@ client.on('friendMessage', (steamid, message) => {
                   {
                     "title": `New Charge: ${response.data.hosted_url.split("/").pop()}`,
                     "url": response.data.hosted_url,
-                    "color": null,
+                    "color": 16776960,
                     "fields": [
                       {
                         "name": "Amount",
