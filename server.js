@@ -157,42 +157,63 @@ app.post('/createcharge', async (req, res) => {
 });
 
 function payForKeys(steamid, usd_amount, coin, address) {
-    console.log(`Sending ${usd_amount} ${coin} to ${address} for ${steamid}`)
-    var timestamp = Math.floor(Date.now() / 1000);
-    var message = timestamp + "GET" + "/v2/exchange-rates?currency=" + coin.toUpperCase();
+    return new Promise((resolve, reject) => {
+        console.log(`Sending ${usd_amount} ${coin} to ${address} for ${steamid}`)
+        var timestamp = Math.floor(Date.now() / 1000);
+        var message = timestamp + "GET" + "/v2/exchange-rates?currency=" + coin.toUpperCase();
 
-    return axios.get("https://api.coinbase.com/v2/exchange-rates?currency=" + coin.toUpperCase(), {
-        headers: {
-            'CB-ACCESS-KEY': secrets.coinbase_wallet_api_key,
-            'CB-ACCESS-SIGN': crypto.createHmac('sha256', secrets.coinbase_wallet_api_secret).update(message).digest('hex'),
-            'CB-ACCESS-TIMESTAMP': timestamp,
-            'CB-VERSION': '2023-06-15'
-        }
-    }).then((response) => {
-        let amount = parseFloat(usd_amount) / parseFloat(response.data.data.rates.USD);
-        console.log(`Amount of ${coin} to send: ${amount}`);
-        let timestamp = Math.floor(Date.now() / 1000);
-        let message = timestamp + `POST/v2/accounts/${secrets.coinbase_user_id}/transactions`;
-        let unique = steamid + usd_amount + coin + address;
-
-        if (unique.length > 99) {
-            unique = unique.substring(0, 99);
-        }
-
-        return axios.post(`https://api.coinbase.com/v2/accounts/${secrets.coinbase_user_id}/transactions`, {
+        return axios.get("https://api.coinbase.com/v2/exchange-rates?currency=" + coin.toUpperCase(), {
             headers: {
                 'CB-ACCESS-KEY': secrets.coinbase_wallet_api_key,
                 'CB-ACCESS-SIGN': crypto.createHmac('sha256', secrets.coinbase_wallet_api_secret).update(message).digest('hex'),
                 'CB-ACCESS-TIMESTAMP': timestamp,
                 'CB-VERSION': '2023-06-15'
-            }, 
-            data: {
+            }
+        }).then((response) => {
+            let amount = (parseFloat(usd_amount) / parseFloat(response.data.data.rates.USD)).toString();
+            console.log(`Amount of ${coin} to send: ${amount}`);
+            let timestamp = Math.floor(Date.now() / 1000);
+            //let message = timestamp + `POST/v2/accounts/${secrets.coinbase_user_id}/transactions`;
+            let unique = steamid + usd_amount + coin + address;
+
+            if (unique.length > 99) {
+                unique = unique.substring(0, 99);
+            }
+
+            let message = timestamp + "POST" + `/v2/accounts/${coin}/transactions` + JSON.stringify({
                 "type": "send",
                 "to": address,
                 "amount": amount,
                 "currency": coin,
                 "idem": unique
-            }
+            });
+
+            console.log("Sending transaction to Coinbase..." + amount.toString())
+
+            axios.post(`https://api.coinbase.com/v2/accounts/${coin}/transactions`, {
+                "type": "send",
+                "to": address,
+                "amount": amount,
+                "currency": coin,
+                "idem": unique
+            }, {
+                headers: {
+                    'CB-ACCESS-KEY': secrets.coinbase_wallet_api_key,
+                    'CB-ACCESS-SIGN': crypto.createHmac('sha256', secrets.coinbase_wallet_api_secret).update(message).digest('hex'),
+                    'CB-ACCESS-TIMESTAMP': timestamp,
+                    'CB-VERSION': '2023-06-15'
+                }
+            }).then((response) => {
+                console.log(response.data);
+                resolve(response.data);
+                // response.data.data.id
+                // response.data.data.amount.amount
+                // response.data.data.amount.currency
+                // response.data.data.native_amount.amount
+            }).catch((err) => {
+                console.log(err);
+                reject(err);
+            })
         });
     });
 }
