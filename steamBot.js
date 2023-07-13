@@ -32,6 +32,7 @@ const logOnOptions = {
   logonID: 2
 };
 
+let errorID = 0;
 
 
 client.logOn(logOnOptions);
@@ -136,13 +137,13 @@ client.on('friendMessage', (steamid, message) => {
     }
 
     else if (message === '!stock') {
-        manager.getInventoryContents(440, 2, true, (err, inventory) => {
-            if (err) {
-                console.log(err);
-            } else {
-                client.chatMessage(steamid, `I currently have ${inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key').length} keys in stock`);
-            }
-        });
+        axios.get('http://localhost:3000/stock').then((response) => {
+                client.chatMessage(steamid, `I currently have ${response.data.tf2keys} keys in stock`);
+            })
+            .catch((error) => {
+                console.log(error);
+                errorFoundContactSupport(steamid, error, 'stock')
+            });
     }
 
     else if (message.startsWith('!send') && steamid.toString() === owner_account_id) {
@@ -153,62 +154,16 @@ client.on('friendMessage', (steamid, message) => {
         })
         .then((response) => {
             console.log(response.data);
+            client.chatMessage(steamid, 'Keys sent!');
         })
         .catch((error) => {
             console.log(error);
+            errorFoundContactSupport(steamid, err, 'sendTF2Keys')
         });
     }
 
     else if (message.startsWith('!buy')) {
-        axios.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${secrets.steam_api_key}&steamids=${steamid.toString()}`)
-        .then((response) => {
-            let avatar = response.data.response.players[0].avatarfull;
         
-
-        axios.post('http://localhost:3000/createcharge', 
-        {
-            steamid: steamid.toString(),
-            keyQuantity: message.split(" ")[1]
-        })
-        .then((response) => {
-            console.log(response.data);
-            client.chatMessage(steamid, `Please pay here: ${response.data.hosted_url}`);
-            axios.post(secrets.discord_webhook, {
-                "content": null,
-                "embeds": [
-                  {
-                    "title": `New Charge: ${response.data.hosted_url.split("/").pop()}`,
-                    "url": response.data.hosted_url,
-                    "color": 16776960,
-                    "fields": [
-                      {
-                        "name": "Amount",
-                        "value": message.split(" ")[1],
-                        "inline": true
-                      },
-                      {
-                        "name": "Price",
-                        "value": (parseInt(message.split(" ")[1]) * secrets.tf2_key_sell_rate).toString(),
-                        "inline": true
-                      }
-                    ],
-                    "author": {
-                      "name": steamid.toString(),
-                      "url": `https://steamcommunity.com/profiles/${steamid.toString()}`,
-                      "icon_url": avatar
-                    }
-                  }
-                ],
-                "attachments": []
-              })
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-    })
-    .catch((error) => {
-        console.log(error);
-    });
     }
 });
 
@@ -242,6 +197,33 @@ manager.on('newOffer', function(offer) {
         });
     }
   });
+
+
+function errorFoundContactSupport(steamid, message, where) {
+    errorID += 1;
+    axios.post(secrets.discord_webhook, {
+        "content": message,
+        "embeds": [
+          {
+            "title": `Error #${errorID.toString()}`,
+            "color": 16711680,
+            "fields": [
+              {
+                "name": "Where",
+                "value": where
+              }
+            ],
+            "author": {
+              "name": steamid.toString(),
+              "url": `https://steamcommunity.com/profiles/${steamid.toString()}`,
+            }
+          }
+        ],
+        "attachments": []
+    })
+
+    client.chatMessage(steamid, `There was an error processing your request. Please contact support with the error ID: ${errorID.toString()}. If you are not a member of the discord server type !discord or add my owner on steam (!owner)`);
+}
 
 
 

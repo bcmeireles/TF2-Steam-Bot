@@ -37,7 +37,6 @@ const manager = new TradeOfferManager({
 });
 
 let inTrade = [];
-let errorID = 0;
 
 const logOnOptions = {
   accountName: secrets.username,
@@ -73,7 +72,7 @@ function sendTF2Keys(partner_steam_id, keyQuantity) {
                 reject(err);
             } else {
                 const offer = manager.createOffer(partner_steam_id);
-                const keys = inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key');
+                const keys = inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key'  && !inTrade.includes(item.assetid));
 
                 //console.log("2")
 
@@ -86,7 +85,6 @@ function sendTF2Keys(partner_steam_id, keyQuantity) {
                     offer.send((err, status) => {
                         if (err) {
                             reject(err);
-                            errorFoundContactSupport(steamid, err, 'sendTF2Keys')
                         } else {
                             community.acceptConfirmationForObject(secrets.identity_secret, offer.id, (err, status) => {
                                 if (err) {
@@ -221,10 +219,8 @@ app.get('/stock', async (req, res) => {
         } else {
             const keys = inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key' && !inTrade.includes(item.assetid));
 
-            console.log(keys[1].assetid)
-
             res.send({
-                'tf2keys': inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key').length
+                'tf2keys': keys.length
             })
         }
     });
@@ -304,31 +300,7 @@ app.post('/webhooks', async (req, res) => {
     }
 });
 
-function errorFoundContactSupport(steamid, message, where) {
-    errorID += 1;
-    axios.post(secrets.discord_webhook, {
-        "content": message,
-        "embeds": [
-          {
-            "title": `Error #${errorID.toString()}`,
-            "color": 16711680,
-            "fields": [
-              {
-                "name": "Where",
-                "value": where
-              }
-            ],
-            "author": {
-              "name": steamid.toString(),
-              "url": `https://steamcommunity.com/profiles/${steamid.toString()}`,
-            }
-          }
-        ],
-        "attachments": []
-      })
 
-      client.chatMessage(steamid, `There was an error processing your request. Please contact support with the error ID: ${errorID.toString()}. If you are not a member of the discord server type !discord or add my owner on steam (!owner)`);
-}
 
 
 
