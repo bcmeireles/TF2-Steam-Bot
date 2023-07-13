@@ -105,10 +105,11 @@ client.on('friendMessage', (steamid, message) => {
             !stats - Get all bot related stats\n \
             !coins - Get a list of all the coins the bot uses\n \
             !fees - Get the current transactions fees for ech coin\n \
-            !stock - Get the current stock of the bot');
+            !stock - Get the current stock of the bot\n \
+            !discord - Discord server for support and updates');
 
         client.chatMessage(steamid, '/code <--------------------------- Buying Commands --------------------------->\n\n \
-        !buy <amount> <coin> - Buy the amount of keys using the coin');
+        !buy <amount> - Buy the amount of keys');
 
         client.chatMessage(steamid, '/code <--------------------------- Selling Commands --------------------------->\n\n \
         !sell <amount> <coin> - Sell the amount of keys for the coin');
@@ -136,6 +137,10 @@ client.on('friendMessage', (steamid, message) => {
                         Total Bought: $${users[steamid].spent}`)
     }
 
+    else if (message === '!coins') {}
+
+    else if (message === '!fees') {}
+
     else if (message === '!stock') {
         axios.get('http://localhost:3000/stock').then((response) => {
                 client.chatMessage(steamid, `I currently have ${response.data.tf2keys} keys in stock`);
@@ -144,6 +149,10 @@ client.on('friendMessage', (steamid, message) => {
                 console.log(error);
                 errorFoundContactSupport(steamid, error, 'stock')
             });
+    }
+
+    else if (message === '!discord') {
+        client.chatMessage(steamid, 'https://discord.gg/B7F2NwVHcV');
     }
 
     else if (message.startsWith('!send') && steamid.toString() === owner_account_id) {
