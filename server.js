@@ -236,10 +236,10 @@ app.post('/payforkeys', async (req, res) => {
 app.get('/stock', async (req, res) => {
     manager.getInventoryContents(440, 2, true, (err, inventory) => {
         if (err) {
+            
             res.status(500).send(err);
         } else {
             const keys = inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key' && !inTrade.includes(item.assetid));
-
             res.send({
                 'tf2keys': keys.length
             })

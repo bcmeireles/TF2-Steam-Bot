@@ -146,7 +146,7 @@ client.on('friendMessage', (steamid, message) => {
                 client.chatMessage(steamid, `I currently have ${response.data.tf2keys} keys in stock`);
             })
             .catch((error) => {
-                console.log(error);
+                //console.log(error);
                 errorFoundContactSupport(steamid, error, 'stock')
             });
     }
@@ -172,7 +172,59 @@ client.on('friendMessage', (steamid, message) => {
     }
 
     else if (message.startsWith('!buy')) {
+        axios.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${secrets.steam_api_key}&steamids=${steamid.toString()}`)
+        .then((response) => {
+            let avatar = response.data.response.players[0].avatarfull;
         
+
+        axios.post('http://localhost:3000/createcharge', 
+        {
+            steamid: steamid.toString(),
+            keyQuantity: message.split(" ")[1]
+        })
+        .then((response) => {
+            console.log(response.data);
+            client.chatMessage(steamid, `Please pay here: ${response.data.hosted_url}`);
+            axios.post(secrets.discord_webhook, {
+                "content": null,
+                "embeds": [
+                  {
+                    "title": `New Charge: ${response.data.hosted_url.split("/").pop()}`,
+                    "url": response.data.hosted_url,
+                    "color": 16776960,
+                    "fields": [
+                      {
+                        "name": "Amount",
+                        "value": message.split(" ")[1],
+                        "inline": true
+                      },
+                      {
+                        "name": "Price",
+                        "value": (parseInt(message.split(" ")[1]) * secrets.tf2_key_sell_rate).toString(),
+                        "inline": true
+                      }
+                    ],
+                    "author": {
+                      "name": steamid.toString(),
+                      "url": `https://steamcommunity.com/profiles/${steamid.toString()}`,
+                      "icon_url": avatar
+                    }
+                  }
+                ],
+                "attachments": []
+              })
+            })
+            .catch((error) => {
+                errorFoundContactSupport(steamid, error, 'createCharge 1')
+            });
+        })
+        .catch((error) => {
+            errorFoundContactSupport(steamid, error, 'createCharge 2')
+        });
+    }
+
+    else if (message.startsWith('!test') ) {
+        errorFoundContactSupport(steamid, 'testing', 'test')
     }
 });
 
@@ -229,6 +281,8 @@ function errorFoundContactSupport(steamid, message, where) {
           }
         ],
         "attachments": []
+    }).then((response) => {
+        console.log(response.data);
     })
 
     client.chatMessage(steamid, `There was an error processing your request. Please contact support with the error ID: ${errorID.toString()}. If you are not a member of the discord server type !discord or add my owner on steam (!owner)`);
