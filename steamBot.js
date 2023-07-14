@@ -180,7 +180,8 @@ client.on('friendMessage', (steamid, message) => {
         axios.post('http://localhost:3000/createcharge', 
         {
             steamid: steamid.toString(),
-            keyQuantity: message.split(" ")[1]
+            keyQuantity: message.split(" ")[1],
+            origin: 'steam'
         })
         .then((response) => {
             console.log(response.data);
