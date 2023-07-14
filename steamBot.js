@@ -228,36 +228,7 @@ client.on('friendMessage', (steamid, message) => {
     }
 });
 
-manager.on('newOffer', function(offer) {
-    console.log("New offer #" + offer.id + " from " + offer.partner.getSteamID64());
-    if (offer.itemsToGive.length === 0) {
-        offer.accept((err, status) => {
-          if (err) {
-            console.log(err);
-          } else {
-            console.log(`Donation accepted. Status: ${status}.`);
-          }
-        });
 
-    } else if (offer.partner.getSteamID64() === owner_account_id) {
-        offer.accept((err, status) => {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log(`Owner offer accepted. Status: ${status}.`);
-            }
-        });
-    
-    } else {
-        offer.decline(err => {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log('Offer declined.');
-            }
-        });
-    }
-  });
 
 
 function errorFoundContactSupport(steamid, message, where) {
