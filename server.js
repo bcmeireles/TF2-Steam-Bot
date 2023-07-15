@@ -5,7 +5,7 @@ const SteamTotp = require('steam-totp');
 const SteamCommunity = require('steamcommunity');
 var SteamID = SteamCommunity.SteamID;
 const TradeOfferManager = require('steam-tradeoffer-manager');
-
+Error.stackTraceLimit = Infinity;
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -115,7 +115,7 @@ app.post('/sendtf2keys', async (req, res) => {
     }
 
     sendTF2Keys(partner_steam_id, keyQuantity)
-        .then((result) => res.send(result))
+        .then((result) => res.status(200).send(result))
         .catch((err) => res.status(500).send(err));
 });
 
@@ -211,7 +211,7 @@ function payForKeys(steamid, usd_amount, coin, address) {
                 }
             }).then((response) => {
                 try {
-                    client.chatMessage(steamid, `${response.data.data.details.header} ${response.data.data.network.transaction_url}`);
+                    client.chatMessage(steamid, response.data.data.details.header);
                 } catch (err) {
                     console.log(err);
                 }

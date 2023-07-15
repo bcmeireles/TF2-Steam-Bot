@@ -4,7 +4,7 @@ const SteamCommunity = require('steamcommunity');
 const TradeOfferManager = require('steam-tradeoffer-manager');
 
 const axios = require('axios');
-
+Error.stackTraceLimit = Infinity;
 const secrets = require('./2fasecrets.json');
 let messageLog = {};
 let users = {};
@@ -167,7 +167,7 @@ client.on('friendMessage', (steamid, message) => {
         })
         .catch((error) => {
             console.log(error);
-            errorFoundContactSupport(steamid, error, 'sendTF2Keys')
+            errorFoundContactSupport(steamid, 'to0 big', 'sendTF2Keys')
         });
     }
 
