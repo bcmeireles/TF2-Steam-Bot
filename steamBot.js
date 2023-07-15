@@ -167,7 +167,7 @@ client.on('friendMessage', (steamid, message) => {
         })
         .catch((error) => {
             console.log(error);
-            errorFoundContactSupport(steamid, 'to0 big', 'sendTF2Keys')
+            errorFoundContactSupport(steamid, error.code, 'sendTF2Keys')
         });
     }
 
