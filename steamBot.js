@@ -216,11 +216,11 @@ client.on('friendMessage', (steamid, message) => {
               })
             })
             .catch((error) => {
-                errorFoundContactSupport(steamid, error, 'createCharge 1')
+                errorFoundContactSupport(steamid, error.code, 'createCharge 1')
             });
         })
         .catch((error) => {
-            errorFoundContactSupport(steamid, error, 'createCharge 2')
+            errorFoundContactSupport(steamid, error.code, 'createCharge 2')
         });
     }
 

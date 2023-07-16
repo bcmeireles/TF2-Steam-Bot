@@ -71,13 +71,13 @@ function sendTF2Keys(partner_steam_id, keyQuantity) {
     return new Promise((resolve, reject) => {
         manager.loadInventory(440, 2, true, (err, inventory) => {
             if (err) {
-                //console.log("1")
+                console.log("1")
                 reject(err);
             } else {
                 const offer = manager.createOffer(partner_steam_id);
                 const keys = inventory.filter(item => item.market_hash_name === 'Mann Co. Supply Crate Key'  && !inTrade.includes(item.assetid));
 
-                //console.log("2")
+                console.log("2")
 
                 if (keys.length >= keyQuantity) {
                     for (let i = 0; i < keyQuantity; i++) {
@@ -87,18 +87,18 @@ function sendTF2Keys(partner_steam_id, keyQuantity) {
                     offer.setMessage(`Here are the ${keyQuantity} keys you purchased.`);
                     offer.send((err, status) => {
                         if (err) {
+                            console.log("3")
                             reject(err);
                         } else {
+                            console.log("4")
                             community.acceptConfirmationForObject(secrets.identity_secret, offer.id, (err, status) => {
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    resolve(`Offer for ${keyQuantity} sent to ${partner_steam_id}. Status: ${status}.`);
-                                }
+                            console.log("6")
+                            resolve(`Offer for ${keyQuantity} sent to ${partner_steam_id}. Status: ${status}.`);
                             });
                         }
                     });
                 } else {
+                    console.log("7")
                     reject('Not enough keys in the inventory.');
                 }
             }
@@ -119,7 +119,7 @@ app.post('/sendtf2keys', async (req, res) => {
         .catch((err) => res.status(500).send(err));
 });
 
-function createCharge(steamid, keyQuantity) {
+function createCharge(steamid, keyQuantity, origin) {
     return new Promise((resolve, reject) => {
         var chargeData = {
             'name': 'TF2 Key Bot',
@@ -136,10 +136,14 @@ function createCharge(steamid, keyQuantity) {
             }
         }
 
+        console.log("aqui lolol")
+
         Charge.create(chargeData, (error, response) => {
             if (error) {
+                console.log("erro aqui 1")
                 reject(error);
             } else {
+                console.log("erro aqui 2")
                 resolve(response);
             }
             
@@ -157,8 +161,15 @@ app.post('/createcharge', async (req, res) => {
     }
 
     createCharge(steamid, keyQuantity, origin)
-        .then((result) => res.send(result))
-        .catch((err) => res.status(500).send(err));
+        .then((result) => {
+            console.log("chegou aqui 123");
+            res.send(result)
+        })
+        .catch((err) => {
+            console.log("foi para aqui 456");
+            console.log(err);
+            res.status(500).send(err)
+        });
 });
 
 function payForKeys(steamid, usd_amount, coin, address) {
@@ -252,7 +263,6 @@ app.get('/stock', async (req, res) => {
 });
 
 app.post('/webhooks', async (req, res) => {
-    try {
         const event = Webhook.verifyEventBody(
             req.rawBody,
             req.headers['x-cc-webhook-signature'],
@@ -261,7 +271,7 @@ app.post('/webhooks', async (req, res) => {
 
         if (event.type === 'charge:confirmed') {
             console.log('sending 200 status');
-            res.sendStatus(200);
+            
             console.log('confirmed')
             let amount = event.data.pricing.local.amount;
             let currency = event.data.pricing.local.currency;
@@ -273,18 +283,19 @@ app.post('/webhooks', async (req, res) => {
 
             sendTF2Keys(steam_id, keyQuantity)
                 .then((result) => {
-                    //console.log('sucessooo');
+                    console.log('sucessooo');
                     //if (origin === 'steam') { client.chatMessage(SteamID(steam_id), `Charge for ${amount} ${currency} confirmed. Sending ${keyQuantity} keys to ${steam_id}.`) }
                     //console.log(result);
-                    axios.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${secrets.steam_api_key}&steamids=${steamid.toString()}`)
+                    //console.log('sucessooo2');
+                    axios.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${secrets.steam_api_key}&steamids=${steam_id.toString()}`)
                     .then((response) => {
                         let avatar = response.data.response.players[0].avatarfull;
-
+                        console.log('sucessooo3');
                         axios.post(secrets.discord_webhook, {
                             "content": null,
                             "embeds": [
                               {
-                                "title": `Keys delivered to ${steamid.toString()}`,
+                                "title": `Keys delivered to ${steam_id.toString()}`,
                                 "color": 65280,
                                 "fields": [
                                   {
@@ -294,37 +305,50 @@ app.post('/webhooks', async (req, res) => {
                                   },
                                   {
                                     "name": "Price",
-                                    "value": (parseInt(message.split(" ")[1]) * secrets.tf2_key_sell_rate).toString(),
+                                    "value": (parseInt(amount.split(" ")[1]) * secrets.tf2_key_sell_rate).toString(),
                                     "inline": true
                                   }
                                 ],
                                 "author": {
-                                  "name": steamid.toString(),
-                                  "url": `https://steamcommunity.com/profiles/${steamid.toString()}`,
+                                  "name": steam_id.toString(),
+                                  "url": `https://steamcommunity.com/profiles/${steam_id.toString()}`,
                                   "icon_url": avatar
                                 }
                               }
                             ],
                             "attachments": []
                           })
+
+                          console.log("yay");
+
+                          res.sendStatus(200);
+                          return
                     })
-                    .catch((err) => console.log(err));
+                    .catch((err) => {
+                        console.log("buy1");
+                        console.log(err);
+                        res.status(500).send(err);
+                        return
+                    });
                     
                 })
-                .catch((err) => res.status(500).send(err));
+                .catch((err) => {
+                    console.log("buy2");
+                    console.log(err.data);
+                    console.log(err)
+                    res.status(500).send(err);
+                    return
+                });
 
         } else {
+            console.log("buy3");
             console.log(event);
-            res.sendStatus(200);
+            res.sendStatus(500);
+            return
         }
 
         
-    } catch(error) {
-        console.error(`Error processing webhook: ${error.message}`);
-        res.status(500).json({
-            error: error
-        });
-    }
+    
 });
 
 manager.on('newOffer', function(offer) {
@@ -349,14 +373,19 @@ manager.on('newOffer', function(offer) {
                             console.log("erro 1");
                             console.log(err);
                         } else {
-                            console.log(`I'm here. Status: ${status}.`);
-                            accepted = true;
-                            console.log("and accepted is set to true");
-                            console.log(accepted);
-                            console.log("successfulyl accepted offer, going to send the monies");
-                            payForKeys(offer.partner.getSteamID64(), receiving * secrets.tf2_key_buy_rate, message.split(" ")[0], message.split(" ")[1])
-                                .then((result) => console.log(result))
-                                .catch((err) => console.log(err.data));
+                            if (message.length > 2) {
+                                console.log(`I'm here. Status: ${status}.`);
+                                accepted = true;
+                                console.log("and accepted is set to true");
+                                console.log(accepted);
+                                console.log("successfulyl accepted offer, going to send the monies");
+                                payForKeys(offer.partner.getSteamID64(), receiving * secrets.tf2_key_buy_rate, message.split(" ")[0], message.split(" ")[1])
+                                    .then((result) => console.log(result))
+                                    .catch((err) => console.log(err.data));
+                            } else {
+                                console.log('Donation accepted')
+                            }
+                            
                             }
                     })
 
