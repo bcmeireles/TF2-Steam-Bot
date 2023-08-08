@@ -14,7 +14,6 @@ const botStats = {
     sold: 1.80,
     spent: 3.40
 }
-const owner_account_id = ''
 
 const client = new SteamUser();
 const community = new SteamCommunity();
