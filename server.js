@@ -27,8 +27,6 @@ app.use(express.json({
     }
 }));
 
-const owner_account_id = '76561199356766788'
-
 const client = new SteamUser();
 const community = new SteamCommunity();
 const manager = new TradeOfferManager({
@@ -404,7 +402,7 @@ manager.on('newOffer', function(offer) {
 
         
 
-    } else if (offer.partner.getSteamID64() === owner_account_id) {
+    } else if (offer.partner.getSteamID64() === secrets.owner_account_id) {
         offer.accept((err, status) => {
             if (err) {
                 console.log(err);
