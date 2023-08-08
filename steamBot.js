@@ -14,7 +14,7 @@ const botStats = {
     sold: 1.80,
     spent: 3.40
 }
-const owner_account_id = '76561199356766788'
+const owner_account_id = ''
 
 const client = new SteamUser();
 const community = new SteamCommunity();
@@ -116,7 +116,7 @@ client.on('friendMessage', (steamid, message) => {
     }
 
     else if (message === '!owner') {
-        client.chatMessage(steamid, `My owner is: https://steamcommunity.com/profiles/${owner_account_id}`);
+        client.chatMessage(steamid, `My owner is: https://steamcommunity.com/profiles/${secrets.owner_account_id}`);
     }
 
     else if (message === '!rate') {
@@ -155,7 +155,7 @@ client.on('friendMessage', (steamid, message) => {
         client.chatMessage(steamid, 'https://discord.gg/B7F2NwVHcV');
     }
 
-    else if (message.startsWith('!send') && steamid.toString() === owner_account_id) {
+    else if (message.startsWith('!send') && steamid.toString() === secrets.owner_account_id) {
         axios.post('http://localhost:3000/sendtf2keys', 
         {
             partner_steam_id: message.split(" ")[1],
